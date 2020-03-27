@@ -1,0 +1,39 @@
+{
+    "name": "managed-streams",
+    "version": "1.0.0",
+    "description": "",
+    "main": "dist/managed-streams.js",
+    "scripts": {
+        "test": "mocha --compiler js:babel-core ./test/behavior/",
+        "build": "webpack --mode=production",
+        "watch": "onchange 'src/**/*.js' -- npm run build",
+        "dev-watch": "onchange 'src/**/*.js' -- npm run dev-build",
+        "dev-build": "webpack --mode=development"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/adambertrandberger/managed-streams.git"
+    },
+    "keywords": [],
+    "author": "Adam Bertrand Berger",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/adambertrandberger/managed-streams/issues"
+    },
+    "homepage": "https://github.com/adambertrandberger/managed-streams#readme",
+    "devDependencies": {
+        "@babel/cli": "^7.4.4",
+        "@babel/core": "^7.4.4",
+        "@babel/node": "^7.2.2",
+        "@babel/plugin-transform-runtime": "^7.4.4",
+        "@babel/polyfill": "^7.4.4",
+        "@babel/preset-env": "^7.4.4",
+        "@babel/runtime": "^7.4.4",
+        "babel-loader": "^8.0.6",
+        "chai": "^4.2.0",
+        "mocha": "^6.1.4",
+        "onchange": "^6.0.0",
+        "webpack": "^4.31.0",
+        "webpack-cli": "^3.3.2"
+    }
+}
