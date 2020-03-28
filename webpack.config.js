@@ -2,6 +2,7 @@ const path = require('path');
 
 module.exports = {
     entry: [
+        'babel-polyfill', // I had to add this to get async/await to work
         './src/main.js',
     ],
     output: {

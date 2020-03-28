@@ -4,10 +4,11 @@
     "description": "",
     "main": "dist/managed-streams.js",
     "scripts": {
-        "test": "mocha --compiler js:babel-core ./test/behavior/",
+        "test": "mocha --compiler js:babel-core ./test/",
+        "build-and-test": "npm run dev-build && npm run test",
         "build": "webpack --mode=production",
-        "watch": "onchange 'src/**/*.js' -- npm run build",
-        "dev-watch": "onchange 'src/**/*.js' -- npm run dev-build",
+        "watch": "onchange 'src/*.js' -- npm run build",
+        "dev-watch": "onchange 'src/*.js' -- npm run dev-build",
         "dev-build": "webpack --mode=development"
     },
     "repository": {
@@ -30,6 +31,7 @@
         "@babel/preset-env": "^7.4.4",
         "@babel/runtime": "^7.4.4",
         "babel-loader": "^8.0.6",
+        "babel-polyfill": "^6.26.0",
         "chai": "^4.2.0",
         "mocha": "^6.1.4",
         "onchange": "^6.0.0",

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Managed Streams - Test</title>
+    </head>
+    <body>
+        <script src="../dist/managed-streams.js"></script>
+        <script>
+         const { Stream } = ms;
+         const wait = ms => {
+             return new Promise(resolve => {
+                 setTimeout(() => {
+                     resolve();
+                 }, ms);
+             });
+         };
+
+         const stream = Stream.seq([
+             async () => {
+                 await wait(100);
+                 return Math.random();
+             },
+             x => -x,
+             x => console.log(x),
+         ]);
+         
+         
+        </script>
+    </body>
+</html>
