@@ -13,78 +13,94 @@
   similar to Software Defined Networking (SDN), but for Reactive
   Programming (RP).
 
-  There are two classes exported by the library:
-
-** Streams
-   A ~Stream~ is a node in a dataflow graph which can be connected to other
-   instances of ~Stream~. ~Stream~ can have multiple sources, and a
-   single sink. There is no throughput control for instances of
-   ~Stream~.
-   
-   Each ~Stream~ has an interval that it uses as a minimum amount of
-   time (in milliseconds) to poll for new data. By default the
-   interval is 0. This means streams will operate as if they are
-   listening to push events from their sources.
-
-   Below is an example of a graph that produces a random value twice a
-   second, squares it, then prints it:
-
-   #+BEGIN_SRC javascript
-     const produce = new Stream({
-         update: () => Math.random(),
-         interval: 500
-     });
-     const process = new Stream(x => x*x),
-     const display = new Stream(x => console.log(x));
-     produce.to(process);
-     process.to(display);
-     produce.run();
+** Installation
+   To install, clone this repo and run:
+   #+BEGIN_SRC bash
+     npm install
    #+END_SRC
 
-   There is also a sequencing function (~Stream.seq~) to construct
-   linear graphs:
+** Usage
+   There are two classes exported by the library:
 
-   #+BEGIN_SRC javascript
-     const produce = Stream.seq([
-         new Stream({
-             update: () => Math.random(),
-             interval: 500
-         }),
-         x => x*x,
-         x => console.log(x)
-     ]);
-     produce.run()
+*** Streams
+    A ~Stream~ is a node in a dataflow graph which can be connected to other
+    instances of ~Stream~. ~Stream~ can have multiple sources, and a
+    single sink. There is no throughput control for instances of
+    ~Stream~.
+   
+    Each ~Stream~ has an interval that it uses as a minimum amount of
+    time (in milliseconds) to poll for new data. By default the
+    interval is 0. This means streams will operate as if they are
+    listening to push events from their sources.
+
+    Below is an example of a graph that produces a random value twice a
+    second, squares it, then prints it:
+
+    #+BEGIN_SRC javascript
+      const produce = new Stream({
+          update: () => Math.random(),
+          interval: 500
+      });
+      const process = new Stream(x => x*x),
+      const display = new Stream(x => console.log(x));
+      produce.to(process);
+      process.to(display);
+      produce.run();
+    #+END_SRC
+
+    There is also a sequencing function (~Stream.seq~) to construct
+    linear graphs:
+
+    #+BEGIN_SRC javascript
+      const produce = Stream.seq([
+          new Stream({
+              update: () => Math.random(),
+              interval: 500
+          }),
+          x => x*x,
+          x => console.log(x)
+      ]);
+      produce.run()
+    #+END_SRC
+
+*** MStreams
+    A ~MStream~ is a managed stream
+    which has runtime metrics collected about its throughput (how many
+    items flow through the node per second). ~MStream~ has a ~target~ that
+    can be passed in the contructor which specifies what the maxium
+    throughput should be for that node. This bounds how many outputs can
+    be sent from a node per second. There also exists a law in the graph
+    where any ~MStream~ can only have a throughput less than or equal to
+    the minimum of its own ~target~ and its source's ~target~.
+
+    ~MStream~ can be combined in the same graph along with
+    ~Stream~. The difference between the two is that ~Stream~ is
+    more lightweight, and allows for non-~Array~ values.
+
+    #+BEGIN_SRC javascript
+      const process = Stream.seq([
+          new MStream(async () => {
+              await wait(100);
+              return [1,2,3,4,5].map(Math.random);
+          }, 100),
+          new MStream(async batch => {
+              return batch.reduce((a, b) => a + b, 0) / batch.length;
+          }),
+          async average => {
+              console.log(average);
+          }
+      ]);
+      process.run();
+    #+END_SRC
+   
+** Tests
+   This code comes with automated tests which can be run (after
+   installation of the library with ~npm install~):
+   #+BEGIN_SRC bash
+     npm run test
    #+END_SRC
 
-** MStreams
-   A ~MStream~ is a managed stream
-   which has runtime metrics collected about its throughput (how many
-   items flow through the node per second). ~MStream~ has a ~target~ that
-   can be passed in the contructor which specifies what the maxium
-   throughput should be for that node. This bounds how many outputs can
-   be sent from a node per second. There also exists a law in the graph
-   where any ~MStream~ can only have a throughput less than or equal to
-   the minimum of its own ~target~ and its source's ~target~.
-
-   ~MStream~ can be combined in the same graph along with
-   ~Stream~. The difference between the two is that ~Stream~ is
-   more lightweight, and allows for non-list values.
-
-   #+BEGIN_SRC javascript
-     const process = Stream.seq([
-         new MStream(async () => {
-             await wait(100);
-             return [1,2,3,4,5].map(Math.random);
-         }, 100),
-         new MStream(async batch => {
-             return batch.reduce((a, b) => a + b, 0) / batch.length;
-         }),
-         async average => {
-             console.log(average);
-         }
-     ]);
-     process.run();
-   #+END_SRC
-   
-   
+   There is also an HTML file located at ~./test/index.html~ which is
+   for manual interactive testing. It imports the library and defines a
+   fewe tests to run manually in your browser's console.
 
