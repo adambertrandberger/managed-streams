@@ -19,6 +19,24 @@
      npm install
    #+END_SRC
 
+   To run in your browser, download the script located at
+   ~./dist/managed-streams.js~ and include in your HTML file:
+
+   #+BEGIN_SRC html
+     <script src="managed-streams.js"></script>
+   #+END_SRC
+   
+** Tests
+   This code comes with automated tests which can be run (after
+   installation of the library with ~npm install~):
+   #+BEGIN_SRC bash
+     npm run test
+   #+END_SRC
+
+   There is also an HTML file located at ~./test/index.html~ which is
+   for manual interactive testing. It imports the library and defines a
+   few tests to run manually in your browser's console.
+
 ** Usage
    There are two classes exported by the library:
 
@@ -79,10 +97,12 @@
 
     #+BEGIN_SRC javascript
       const process = Stream.seq([
-          new MStream(async () => {
-              await wait(100);
-              return [1,2,3,4,5].map(Math.random);
-          }, 100),
+          new MStream({
+              update:async () => {
+                  return [1,2,3,4,5].map(Math.random);
+              },
+              interval: 100
+          }),
           new MStream(async batch => {
               return batch.reduce((a, b) => a + b, 0) / batch.length;
           }),
@@ -92,15 +112,3 @@
       ]);
       process.run();
     #+END_SRC
-   
-** Tests
-   This code comes with automated tests which can be run (after
-   installation of the library with ~npm install~):
-   #+BEGIN_SRC bash
-     npm run test
-   #+END_SRC
-
-   There is also an HTML file located at ~./test/index.html~ which is
-   for manual interactive testing. It imports the library and defines a
-   fewe tests to run manually in your browser's console.
-

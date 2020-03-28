@@ -18,15 +18,30 @@ class MStream extends Stream {
         this.target = init.target || Infinity;
     }
 
-    async process(message) {
-        // if the previous stream wasn't using a list,
-        // lift the value into a list
-        if (message !== undefined) {
-            message.value = liftIntoArray(message.value);
+    async process(event) {
+        // if the previous stream wasn't using a batch (this means it wasn't a MStream),
+        // lift the value into a batch
+        if (!(event.value instanceof Batch)) {
+            event.value = Batch.lift(event.value);
         }
-        let value = await super.process(message);
-        // add the length of the returned batch to the window for counting throughput
-        this.window.add(value.length);
+
+        let value = await super.process(event);
+        
+        // add how many items this computation represented to the moving window count (for calculating throughput later)
+        this.window.add(event.value.effectiveSize);
+
+        // if this MStream is connected to another MStream,
+        // send it a new batch
+        // if it is connected to a normal Stream,
+        // just send the value
+        if (this.sink !== null) {
+            if (this.sink instanceof MStream) {
+                // propagate the effectiveSize in a new batch (effectiveSize should never change after it has been initially set)
+                return new Batch(value, event.value.effectiveSize); 
+            } else {
+                return value;                
+            }
+        }
         return value;
     }
 
@@ -48,6 +63,27 @@ class MStream extends Stream {
 
     static lift(x) {
         return super.lift(x, MStream);
+    }
+}
+
+class Batch {
+    constructor(items, effectiveSize) {
+        this.items = items;
+
+        // effectiveSize is how many samples this batch represents
+        // ~this.items.length~ might only be 1, but if the computation
+        // that generated this batch had to go through 1000 items to produce
+        // that value, that one value represents 1000 items.
+        //
+        // effectiveSize should only be set for source nodes
+        // then each node that follows should just pass the same effectiveSize
+        // along
+        this.effectiveSize = effectiveSize;
+    }
+
+    static lift(x) {
+        const arr = liftIntoArray(x);
+        return new Batch(arr, arr.length);
     }
 }
 

@@ -77,9 +77,9 @@ class Stream {
         // if this node is a source, don't check channel
         if (this.sources.length === 0) {
             if (this.sink === null) { // this is the only node in the network
-                await this.process();
+                await this.process(Event.empty(this));
             } else {
-                await this.output(this.process());                    
+                await this.output(this.process(Event.empty(this)));                    
             }
         } else if (this.sink !== null) {
             // if this is a node between a source and a sink,
@@ -150,6 +150,10 @@ class Event {
         this.deltaTime = deltaTime; // how long this data took to produce
         this.time = time; // when this data was produced (when it started)
         this.interval = from.interval; // the sample rate (in ms of delay) when this data was generated
+    }
+
+    static empty(from, deltaTime=0, time=new Date()) {
+        return new Event(null, from, deltaTime, time);
     }
 }
 
