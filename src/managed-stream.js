@@ -21,23 +21,30 @@ class MStream extends Stream {
     async process(event) {
         // if the previous stream wasn't using a batch (this means it wasn't a MStream),
         // lift the value into a batch
-        if (!(event.value instanceof Batch)) {
-            event.value = Batch.lift(event.value);
+        let effectiveSize = null,
+            value = null;
+        if (event !== undefined) { // if the event is undefined, that means this node is a source
+            if (!(event.value instanceof Batch)) {
+                event.value = Batch.lift(event.value);
+            }
+            // pass on the value of effectiveSize
+            effectiveSize = event.value.effectiveSize;
+            value = await super.process(event.value.items);            
+        } else {
+            value = await super.process();
+            // if this is a source, set the effectiveSize instead of just passing the value along            
+            effectiveSize = liftIntoArray(value).length;            
         }
-
-        let value = await super.process(event);
         
         // add how many items this computation represented to the moving window count (for calculating throughput later)
-        this.window.add(event.value.effectiveSize);
+        this.window.add(effectiveSize);
 
-        // if this MStream is connected to another MStream,
-        // send it a new batch
-        // if it is connected to a normal Stream,
-        // just send the value
+        // if this MStream is connected to another MStream, send it a new batch
+        // if it is connected to a normal Stream, just send the value
         if (this.sink !== null) {
             if (this.sink instanceof MStream) {
                 // propagate the effectiveSize in a new batch (effectiveSize should never change after it has been initially set)
-                return new Batch(value, event.value.effectiveSize); 
+                return new Batch(value, effectiveSize); 
             } else {
                 return value;                
             }

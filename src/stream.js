@@ -77,9 +77,9 @@ class Stream {
         // if this node is a source, don't check channel
         if (this.sources.length === 0) {
             if (this.sink === null) { // this is the only node in the network
-                await this.process(Event.empty(this));
+                await this.process();
             } else {
-                await this.output(this.process(Event.empty(this)));                    
+                await this.output(this.process());                    
             }
         } else if (this.sink !== null) {
             // if this is a node between a source and a sink,
