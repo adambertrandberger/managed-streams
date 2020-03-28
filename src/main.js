@@ -1,6 +1,7 @@
 const { Stream } = require('./stream.js');
-const { BufferedChannel } = require('./buffered-channel.js');
+const { MStream } = require('./managed-stream.js');
 
 module.exports = {
-    Stream
+    Stream,
+    MStream    
 };

@@ -7,7 +7,7 @@
     <body>
         <script src="../dist/managed-streams.js"></script>
         <script>
-         const { Stream } = ms;
+         const { Stream, MStream } = ms;
          const wait = ms => {
              return new Promise(resolve => {
                  setTimeout(() => {
@@ -16,16 +16,33 @@
              });
          };
 
-         const stream = Stream.seq([
-             async () => {
-                 await wait(100);
-                 return Math.random();
-             },
-             x => -x,
-             x => console.log(x),
-         ]);
-         
-         
+         function streamExample() {
+             const stream = Stream.seq([
+                 async () => {
+                     await wait(100);
+                     return Math.random();
+                 },
+                 (x, info) => (console.log(x, info), -x),
+                 x => 2+x,
+             ]);
+             stream.run();
+         }
+
+         function mstreamExample() {
+             const stream = Stream.seq([
+                 async () => {
+                     await wait(100);
+                     return [Math.random(), Math.random(), Math.random()];
+                 },
+                 async batch => {
+                     return batch.length;
+                 },
+                 async length => {
+                     console.log(length);
+                 }
+             ]);
+             stream.run();
+         }
         </script>
     </body>
 </html>

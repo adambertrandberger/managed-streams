@@ -1,4 +1,5 @@
 const { BufferedChannel } = require('./buffered-channel.js');
+const { TimeWindow } = require('./time-window.js');
 
 class Stream {
     constructor(init={}) {
@@ -11,10 +12,9 @@ class Stream {
 
         // each stream has an interval which is
         // the frequency (delay in ms per loop) in which to check the buffered channel
-        this.interval(init.interval || 0)
-        // windowDuration is for keeping throughput statistics it is the period of time
-        // to tally up how many items we have processed
-            .windowDuration(init.window || 1000);
+        this.interval = init.interval || 0;
+
+        this.cancelled = false;
     }
 
     to(sink) {
@@ -27,15 +27,43 @@ class Stream {
         this.forEach(x => x.poll());
     }
 
+    // stops each node's polling process
+    cancel() {
+        this.forEach(x => {
+            x.cancelled = true;
+        });
+    }
+
     // continuously poll at ~this.interval~
     poll() {
+        this.cancelled = false;
         const loop = () => {
             setTimeout(async () => {
                 await this.propagate();
-                loop();
+                if (!this.cancelled) {
+                    loop();
+                }
             }, this.interval);
         };
         loop();
+    }
+
+    // wraps the ~this.update~ function -- for subclasses to do pre/post-processing
+    async process(value) {
+        // if the value is a event (almost always the case),
+        // pass the update function the value, and create an information object
+        // with metadata
+        if (value instanceof Event) {
+            const event = value;
+            return await this.update(event.value, {
+                from: event.from,
+                deltaTime: event.deltaTime,
+                interval: event.interval,
+                time: event.time
+            });            
+        } else { // this will only be the case for a source (one that doesn't have any sources of its own)
+            return await this.update(value);
+        }
     }
 
     // takes data from the channel (if applicable)
@@ -43,20 +71,33 @@ class Stream {
     async propagate() {
         // if this node is a source, don't check channel
         if (this.sources.length === 0) {
-            this.sink.channel.put(await this.update());                    
+            if (this.sink === null) { // this is the only node in the network
+                await this.process();
+            } else {
+                await this.output(this.process());                    
+            }
         } else if (this.sink !== null) {
             // if this is a node between a source and a sink,
             // get value from channel, process it, and relay it to the sink
             const value = await this.channel.get();
-            this.sink.channel.put(await this.update(value));                    
+            await this.output(this.process(value));                    
         } else {
             // if this is a sink, get value from channel and run update
             // without propagating downstream (there is no downstream)
             const value = await this.channel.get();
-            await this.update(value);                    
+            await this.process(value);                    
         }
     }
-    
+
+    // takes statistics on the value produced by the
+    // given promise, then sends a event with the value to the sink
+    async output(promise) {
+        const startTime = new Date(),
+              value = await promise,
+              now = new Date(),
+              event = new Event(value, this, now - startTime, startTime);
+        this.sink.channel.put(event);
+    }
 
     // maps a function over each node in the network
     forEach(f, skip=new Set()) {
@@ -71,32 +112,22 @@ class Stream {
         }
     }
 
-    interval(interval) {
-        this.interval = interval;
-        return this;
-    }
-
-    windowDuration(duration) {
-        this.window = new TimeWindow(duration);
-        return this;
-    }
-
-    static lift(x) {
+    static lift(x, LiftType=Stream) {
         if (x instanceof Stream) {
             return x;
         } else if (typeof x === 'function') {
-            return new Stream({
+            return new LiftType({
                 update: x
             });
         } else {
-            return new Stream({
+            return new LiftType({
                 update: () => x
             });
         }
     }
 
-    static seq(xs) {
-        const streams = xs.map(Stream.lift);
+    static seq(xs, LiftType=Stream) {
+        const streams = xs.map(x => LiftType.lift(x, LiftType));
         for (var i=1; i<streams.length; ++i) {
             streams[i-1].to(streams[i]);
         }
@@ -104,9 +135,16 @@ class Stream {
     }
 }
 
-class Batch {
-    constructor(items) {
-        this.items = items;
+// a event is sent over the channel so that
+// the downstream knows which stream sent the value
+// and includes some statistic information
+class Event {
+    constructor(value, from, deltaTime, time=new Date()) {
+        this.value = value; // the data
+        this.from = from; // which stream produced this data
+        this.deltaTime = deltaTime; // how long this data took to produce
+        this.time = time; // when this data was produced (when it started)
+        this.interval = from.interval; // the sample rate (in ms of delay) when this data was generated
     }
 }
 

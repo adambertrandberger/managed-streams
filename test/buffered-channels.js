@@ -4,14 +4,14 @@ const {
 } = require('../src/buffered-channel.js');
 
 describe('Buffered Channel', () => {
-    it('Returns the same value that is ~put~', async () => {
+    it('Returns the same value that is ~put~.', async () => {
         const chan = new BufferedChannel(),
               value = 23948;
         chan.put(value);
         const chanValue = await chan.get();
         expect(value).to.equal(chanValue);
     });
-    it('Buffers values that have been ~put~ in LIFO ordering', async () => {
+    it('Buffers values that have been ~put~ in FIFO ordering.', async () => {
         const chan = new BufferedChannel(),
               value1 = 9812,
               value2 = 1234,
@@ -27,7 +27,7 @@ describe('Buffered Channel', () => {
         expect(value2).to.equal(chanValue2);
         expect(value3).to.equal(chanValue3);                
     });
-    it('Blocks until value is ~put~', done => {
+    it('Blocks until value is ~put~.', done => {
         const chan = new BufferedChannel();
         var value;
         chan.get().then(x => value = x);
@@ -41,7 +41,7 @@ describe('Buffered Channel', () => {
             }, 10);
         }, 10);
     });
-    it('Multiple ~get~s can be run after another', done => {
+    it('Multiple ~get~s can be run after another.', done => {
         const chan = new BufferedChannel();
         var get1,
             get2,
@@ -76,7 +76,7 @@ describe('Buffered Channel', () => {
             }, 10);
         }, 10);
     });
-    it('Multiple blocked ~get~s recieve the same ~put~ value', done => {
+    it('Multiple blocked ~get~s recieve the same ~put~ value.', done => {
         const chan = new BufferedChannel();
         var get1;
         var get2;
