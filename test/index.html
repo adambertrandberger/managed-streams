@@ -28,6 +28,18 @@
              stream.run();
          }
 
+         function readmeExample() {
+             const produce = new Stream({
+                 update: () => Math.random(),
+                 interval: 500
+             }),
+                   process = new Stream(x => x*x),
+                   display = new Stream(x => console.log(x));
+             produce.to(process);
+             process.to(display);
+             produce.run();
+         }
+
          function mstreamExample() {
              const stream = Stream.seq([
                  async () => {

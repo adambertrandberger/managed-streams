@@ -3,6 +3,11 @@ const { TimeWindow } = require('./time-window.js');
 
 class Stream {
     constructor(init={}) {
+        if (typeof init === 'function') {
+            init = {
+                update: init
+            };
+        }
         this.update = init.update; // [a] => [b]
 
         this.sources = [];
