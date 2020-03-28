@@ -1,0 +1,23 @@
+* Managed Streams
+  Managed Streams is a dataflow programming library for JavaScript that
+  implements streams with automatic throughput control. This is useful
+  for programs that are setup in a dynamic environment. The concept is
+  similar to Software Defined Networking (SDN), but for Reactive
+  Programming (RP).
+
+  There are two classes exported by the library. 
+
+  First there is ~Stream~.
+  ~Stream~ is a node in a dataflow graph which can be connected to other
+  instance of ~Stream~. There is no throughput control for instances of
+  ~Stream~.
+
+  Alternatively there is ~MStream~. An ~MStream~ is a managed stream
+  which has runtime metrics collected about its throughput (how many
+  items flow through the node per second. ~MStream~ has a ~target~ that
+  can be passed in the contructor which specifies what the maxium
+  throughput should be for that node. This bounds how many outputs can
+  be sent from a node per second. There also exists a law in the graph
+  where any ~MStream~ can only have a throughput less than or equal to
+  the minimum of its own ~target~ and its source's ~target~.
+
