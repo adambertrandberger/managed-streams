@@ -4,7 +4,7 @@ const { Stream } = require('./stream.js');
 /*
  * Managed stream
  *
- * A Stream that takes batches as input, and generates them for output,
+ * A Stream that takes batches as input,
  * that has built-in metrics, and automatic update of sample rates.
  */
 class MStream extends Stream {
@@ -25,9 +25,6 @@ class MStream extends Stream {
             message.value = liftIntoArray(message.value);
         }
         let value = await super.process(message);
-        // MStream always takes batches (arrays) and always returns them,
-        // so ensure the return value is an array
-        value = liftIntoArray(value);
         // add the length of the returned batch to the window for counting throughput
         this.window.add(value.length);
         return value;

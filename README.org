@@ -1,16 +1,30 @@
 * Managed Streams
   Managed Streams is a dataflow programming library for JavaScript that
   implements streams with automatic throughput control. This is useful
-  for programs that are setup in a dynamic environment. The concept is
+  for programs that process data (such as IoT data
+  analysis, or other signal processing) in some dynamic
+  environment. Programs written in the library are able to scale to
+  their environemnts. If the program runs in better conditions (such as
+  fast network speeds, or on a fast computer) it will produce higher
+  quality data automatically, and under worse conditions, data quality
+  is scaled down. 
+
+  The concept is
   similar to Software Defined Networking (SDN), but for Reactive
   Programming (RP).
 
   There are two classes exported by the library:
 
 ** Streams
-   ~Stream~ is a node in a dataflow graph which can be connected to other
-   instance of ~Stream~. There is no throughput control for instances of
+   A ~Stream~ is a node in a dataflow graph which can be connected to other
+   instances of ~Stream~. ~Stream~ can have multiple sources, and a
+   single sink. There is no throughput control for instances of
    ~Stream~.
+   
+   Each ~Stream~ has an interval that it uses as a minimum amount of
+   time (in milliseconds) to poll for new data. By default the
+   interval is 0. This means streams will operate as if they are
+   listening to push events from their sources.
 
    Below is an example of a graph that produces a random value twice a
    second, squares it, then prints it:
@@ -43,12 +57,34 @@
    #+END_SRC
 
 ** MStreams
-   Alternatively there is ~MStream~. An ~MStream~ is a managed stream
+   A ~MStream~ is a managed stream
    which has runtime metrics collected about its throughput (how many
-   items flow through the node per second. ~MStream~ has a ~target~ that
+   items flow through the node per second). ~MStream~ has a ~target~ that
    can be passed in the contructor which specifies what the maxium
    throughput should be for that node. This bounds how many outputs can
    be sent from a node per second. There also exists a law in the graph
    where any ~MStream~ can only have a throughput less than or equal to
    the minimum of its own ~target~ and its source's ~target~.
+
+   ~MStream~ can be combined in the same graph along with
+   ~Stream~. The difference between the two is that ~Stream~ is
+   more lightweight, and allows for non-list values.
+
+   #+BEGIN_SRC javascript
+     const process = Stream.seq([
+         new MStream(async () => {
+             await wait(100);
+             return [1,2,3,4,5].map(Math.random);
+         }, 100),
+         new MStream(async batch => {
+             return batch.reduce((a, b) => a + b, 0) / batch.length;
+         }),
+         async average => {
+             console.log(average);
+         }
+     ]);
+     process.run();
+   #+END_SRC
+   
+   
 
