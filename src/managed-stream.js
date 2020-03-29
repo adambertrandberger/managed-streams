@@ -16,6 +16,13 @@ class MStream extends Stream {
 
         // ~this.target~ is an upper bound on how many samples per second this node should process
         this.target = init.target || Infinity;
+
+        /*
+         * control channels
+         * each stream should have a control channel with an interval of 0
+         * the messages sent to them should have the logic for the elastic behavior
+         * like how long to wait until evaluating the throughput again
+         */
     }
 
     async process(event) {
@@ -29,11 +36,11 @@ class MStream extends Stream {
             }
             // pass on the value of effectiveSize
             effectiveSize = event.value.effectiveSize;
-            value = await super.process(event.value.items);            
+            value = await super.process(event.value.items);
         } else {
             value = await super.process();
             // if this is a source, set the effectiveSize instead of just passing the value along            
-            effectiveSize = liftIntoArray(value).length;            
+            effectiveSize = liftIntoArray(value).length;
         }
         
         // add how many items this computation represented to the moving window count (for calculating throughput later)
@@ -44,12 +51,24 @@ class MStream extends Stream {
         if (this.sink !== null) {
             if (this.sink instanceof MStream) {
                 // propagate the effectiveSize in a new batch (effectiveSize should never change after it has been initially set)
-                return new Batch(value, effectiveSize); 
+                return new Batch(value, effectiveSize);
             } else {
                 return value;                
             }
         }
         return value;
+    }
+    
+    // this node subceeds the target throughput if its throughput is less than
+    // its ~source~s target throughputs or this node's target throughput
+    isSubceedingThroughput() {
+        return this.getThroughput() < this.getTargetThroughput();
+    }
+
+    // this node exceeds the target throughput if its throughput is higher than
+    // its ~source~s target throughputs or this node's target throughput
+    isExceedingThroughput() {
+        return this.getThroughput() > this.getTargetThroughput();
     }
 
     // target throughput is the minimum throughput of the ~sources~ and this node's ~this.target~

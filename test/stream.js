@@ -60,7 +60,7 @@ describe('Stream', () => {
         expect(stream3.update(23)).to.equal(33);                
     });
 
-    it('Can be sequenced', () => {
+    it('Can be sequenced.', () => {
         const stream1 = new Stream(),
               stream2 = new Stream(),
               stream3 = new Stream(),
@@ -84,4 +84,30 @@ describe('Stream', () => {
         expect(seqStream3.sink.sink).to.eql(stream3);        
         expect(seqStream3.sink.sink.sink).to.eql(stream4);
     });
+
+    it('Can iterate over each node once with ~this.forEach~.', () => {
+        const stream1 = new Stream(),
+              stream2 = new Stream(),
+              stream3 = new Stream(),
+              stream4 = new Stream(),
+              allNodes = new Set([stream1, stream2, stream3, stream4]);
+        stream1.to(stream3);
+        stream2.to(stream3);
+        stream3.to(stream4);
+        const nodes = new Set();
+        stream1.forEach(node => {
+            nodes.add(node);
+        });
+        expect(setEqual(nodes, allNodes)).to.equal(true);
+    });
 });
+
+// tests equality for Set objects
+function setEqual(set1, set2) {
+    for (const item of set1) {
+        if (!set2.has(item)) {
+            return false;
+        }
+    }
+    return true;
+}

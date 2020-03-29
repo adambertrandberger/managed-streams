@@ -1,5 +1,6 @@
 const { BufferedChannel } = require('./buffered-channel.js');
 const { TimeWindow } = require('./time-window.js');
+const { intervalToSampleRate } = require('./util.js');
 
 class Stream {
     constructor(init={}) {
@@ -150,10 +151,7 @@ class Event {
         this.deltaTime = deltaTime; // how long this data took to produce
         this.time = time; // when this data was produced (when it started)
         this.interval = from.interval; // the sample rate (in ms of delay) when this data was generated
-    }
-
-    static empty(from, deltaTime=0, time=new Date()) {
-        return new Event(null, from, deltaTime, time);
+        this.sampleRate = intervalToSampleRate(this.interval); // how many samples per second
     }
 }
 
