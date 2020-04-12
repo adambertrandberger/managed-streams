@@ -14,7 +14,8 @@ class MStream extends Stream {
         // ~this.window~ is an array of the lengths of batches that have been processed in the last ~init.windowDuration~ ms
         this.window = new TimeWindow(init.windowDuration);
 
-        // ~this.target~ is an upper bound on how many samples per second this node should process
+        // ~this.target~ is an upper bound on the datarate of this node
+        // where datarate = this node's output/this node's input
         this.target = init.target || Infinity;
 
         /*
@@ -58,18 +59,8 @@ class MStream extends Stream {
         }
         return value;
     }
-    
-    // this node subceeds the target throughput if its throughput is less than
-    // its ~source~s target throughputs or this node's target throughput
-    isSubceedingThroughput() {
-        return this.getThroughput() < this.getTargetThroughput();
-    }
 
-    // this node exceeds the target throughput if its throughput is higher than
-    // its ~source~s target throughputs or this node's target throughput
-    isExceedingThroughput() {
-        return this.getThroughput() > this.getTargetThroughput();
-    }
+    
 
     // target throughput is the minimum throughput of the ~sources~ and this node's ~this.target~
     // it is an upper bound on what this node's throughput should be
